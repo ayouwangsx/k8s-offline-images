@@ -52,7 +52,7 @@ jobs:
             echo "❌ kubeadm version ${K8S_VERSION_NUM} not found!"
             exit 1
           fi
-          sudo apt-get install -y kubeadm=$DEB_KUBEADM_VERSION kubelet=$DEB_KUBEADM_VERSION kubectl=$DEB_KUBEADM_VERSION --allow-unauthenticated
+          sudo apt-get install -y kubeadm=$DEB_KUBEADM_VERSION kubelet=$DEB_KUBEADM_VERSION kubectl=$DEB_KUBEADM_VERSION --allow-unauthenticated --allow-downgrades
 
       - name: Save images to tarball
         run: |
