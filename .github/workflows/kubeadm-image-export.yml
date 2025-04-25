@@ -55,12 +55,19 @@ jobs:
 
       - name: Save images to tarball
         run: |
-          IMAGES=$(sudo kubeadm config images list | grep "registry.k8s.io")
+          # 获取所有的镜像列表
+          IMAGES=$(sudo kubeadm config images list --kubernetes-version $K8S_VERSION)
+
+          # 定义压缩文件名
           FILE="k8s-${K8S_VERSION}.tar.gz"
+
+          # 使用 containerd 的 ctr 命令逐一拉取镜像
           for img in $IMAGES; do
-            docker pull $img
+            sudo ctr images pull $img
           done
-          docker save $IMAGES | gzip > $FILE
+
+          # 使用 containerd 保存镜像为 tarball
+          sudo ctr images export $FILE $IMAGES
           echo "ARCHIVE_NAME=$FILE" >> $GITHUB_ENV
 
       - name: Upload image archive to GitHub Release
