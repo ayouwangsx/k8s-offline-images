@@ -49,9 +49,9 @@ jobs:
           sudo apt-get update --allow-unauthenticated
           sudo apt-get install -y kubeadm --allow-unauthenticated
 
-      - name: Pull images with kubeadm
-        run: |
-          sudo kubeadm config images pull --kubernetes-version $K8S_VERSION --cri-socket unix:///var/run/containerd/containerd.sock
+      # - name: Pull images with kubeadm
+      #   run: |
+      #     sudo kubeadm config images pull --kubernetes-version $K8S_VERSION --cri-socket unix:///var/run/containerd/containerd.sock
 
       - name: Save images to tarball
         run: |
