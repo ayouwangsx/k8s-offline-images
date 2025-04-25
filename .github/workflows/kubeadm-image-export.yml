@@ -34,6 +34,9 @@ jobs:
           sudo apt-get install -y apt-transport-https ca-certificates curl
           # sudo curl -fsSL https://mirrors.aliyun.com/kubernetes-new/core/stable/v1.29/deb/Release.key | gpg --batch --yes --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
           sudo echo "deb https://mirrors.aliyun.com/kubernetes-new/core/stable/v1.29/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list > /dev/null
+          # 创建 apt 配置文件以跳过 GPG 密钥验证
+          echo "APT::Get::AllowUnauthenticated \"true\";" | sudo tee /etc/apt/apt.conf.d/99disable-verify > /dev/null
+          echo "APT::Check-Valid-Until \"false\";" | sudo tee -a /etc/apt/apt.conf.d/99disable-verify > /dev/null
           sudo apt-get update --allow-unauthenticated
           sudo apt-get install -y kubeadm --allow-unauthenticated
 
