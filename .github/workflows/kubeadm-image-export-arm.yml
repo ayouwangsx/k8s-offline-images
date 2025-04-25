@@ -7,7 +7,7 @@ on:
 
 jobs:
   export-images:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     permissions:
       contents: write  # 用于发布 release
 
@@ -59,7 +59,7 @@ jobs:
           IMAGES=$(sudo kubeadm config images list --kubernetes-version $K8S_VERSION)
 
           # 定义压缩文件名
-          FILE="k8s-${K8S_VERSION}.tar.gz"
+          FILE="k8s-${K8S_VERSION}-arm64.tar.gz"
 
           # 使用 containerd 的 ctr 命令逐一拉取镜像
           for img in $IMAGES; do

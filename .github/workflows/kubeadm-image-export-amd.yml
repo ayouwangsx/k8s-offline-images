@@ -1,0 +1,78 @@
+name: Build and Push K8s Images
+
+on:
+  push:
+    tags:
+      - 'v*'  # 例如 v1.29.0
+
+jobs:
+  export-images:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # 用于发布 release
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 配置 Git 用户信息
+      - name: Configure Git user
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Extract version from tag
+        id: version
+        run: echo "K8S_VERSION=${GITHUB_REF##*/}" >> $GITHUB_ENV
+
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2
+
+      - name: Install containerd
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y containerd
+          
+          # 配置 containerd 默认配置文件
+          sudo mkdir -p /etc/containerd
+          sudo containerd config default | sudo tee /etc/containerd/config.toml
+          
+          sudo systemctl restart containerd
+          sudo systemctl enable containerd
+
+      - name: Install kubeadm
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y apt-transport-https ca-certificates curl
+          # sudo curl -fsSL https://mirrors.aliyun.com/kubernetes-new/core/stable/v1.29/deb/Release.key | gpg --batch --yes --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+          sudo echo "deb [trusted=yes] https://mirrors.aliyun.com/kubernetes-new/core/stable/v1.29/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list > /dev/null
+          sudo apt-get update --allow-unauthenticated
+          sudo apt-get install -y kubeadm --allow-unauthenticated
+
+      - name: Pull images with kubeadm
+        run: |
+          sudo kubeadm config images pull --kubernetes-version $K8S_VERSION --cri-socket unix:///var/run/containerd/containerd.sock
+
+      - name: Save images to tarball
+        run: |
+          # 获取所有的镜像列表
+          IMAGES=$(sudo kubeadm config images list --kubernetes-version $K8S_VERSION)
+
+          # 定义压缩文件名
+          FILE="k8s-${K8S_VERSION}-amd64.tar.gz"
+
+          # 使用 containerd 的 ctr 命令逐一拉取镜像
+          for img in $IMAGES; do
+            sudo ctr images pull $img
+          done
+
+          # 使用 containerd 保存镜像为 tarball
+          sudo ctr images export $FILE $IMAGES
+          echo "ARCHIVE_NAME=$FILE" >> $GITHUB_ENV
+
+      - name: Upload image archive to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ${{ env.ARCHIVE_NAME }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
