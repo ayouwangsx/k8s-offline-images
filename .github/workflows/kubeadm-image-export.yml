@@ -48,7 +48,6 @@ jobs:
           sudo echo "deb [trusted=yes] https://mirrors.aliyun.com/kubernetes-new/core/stable/v1.29/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list > /dev/null
           sudo apt-get update --allow-unauthenticated
           sudo apt-get install -y kubeadm --allow-unauthenticated
-          sudo systemctl start docker
 
       - name: Pull images with kubeadm
         run: |
