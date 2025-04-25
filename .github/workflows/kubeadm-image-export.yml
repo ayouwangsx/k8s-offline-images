@@ -39,7 +39,7 @@ jobs:
 
       - name: Pull images with kubeadm
         run: |
-          sudo kubeadm config images pull --kubernetes-version $K8S_VERSION
+          sudo kubeadm config images pull --kubernetes-version $K8S_VERSION --cri-socket unix:///var/run/containerd/containerd.sock
 
       - name: Save images to tarball
         run: |
