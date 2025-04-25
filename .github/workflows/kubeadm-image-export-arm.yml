@@ -3,19 +3,19 @@ name: Build and Push K8s Images
 on:
   push:
     tags:
-      - 'v*'  # 例如 v1.29.0
+      - 'v*'
 
 jobs:
   export-images:
     runs-on: ubuntu-24.04-arm
     permissions:
-      contents: write  # 用于发布 release
+      # 用于发布 release
+      contents: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 配置 Git 用户信息
       - name: Configure Git user
         run: |
           git config --global user.name "GitHub Actions"
@@ -23,7 +23,7 @@ jobs:
 
       - name: Extract version from tag
         id: version
-        run: echo "K8S_VERSION=${GITHUB_REF##*/}" >> $GITHUB_ENV
+        run: echo "K8S_VERSION=$(cat VERSION)" >> $GITHUB_ENV
 
       - name: Set up Docker
         uses: docker/setup-buildx-action@v2
@@ -32,8 +32,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y containerd
-          
-          # 配置 containerd 默认配置文件
+
           sudo mkdir -p /etc/containerd
           sudo containerd config default | sudo tee /etc/containerd/config.toml
           
@@ -47,33 +46,25 @@ jobs:
           sudo apt-get install -y apt-transport-https ca-certificates curl
           sudo echo "deb [trusted=yes] https://mirrors.aliyun.com/kubernetes/apt/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list > /dev/null
           sudo apt-get update --allow-unauthenticated
-          # sudo apt-get install -y kubeadm --allow-unauthenticated
-          # 自动获取完整版本号
+          # 获取完整版本号
           DEB_KUBEADM_VERSION=$(apt-cache madison kubeadm | grep ${K8S_VERSION_NUM} | head -n1 | awk '{print $3}')
           if [ -z "$DEB_KUBEADM_VERSION" ]; then
             echo "❌ kubeadm version ${K8S_VERSION_NUM} not found!"
             exit 1
           fi
-          sudo apt-get install -y kubeadm=$DEB_KUBEADM_VERSION --allow-unauthenticated
-
-      # - name: Pull images with kubeadm
-      #   run: |
-      #     sudo kubeadm config images pull --kubernetes-version $K8S_VERSION --cri-socket unix:///var/run/containerd/containerd.sock
+          sudo apt-get install -y kubeadm=$DEB_KUBEADM_VERSION kubelet=$DEB_KUBEADM_VERSION kubectl=$DEB_KUBEADM_VERSION--allow-unauthenticated
 
       - name: Save images to tarball
         run: |
           # 获取所有的镜像列表
           IMAGES=$(sudo kubeadm config images list --kubernetes-version $K8S_VERSION)
-
           # 定义压缩文件名
           FILE="k8s-${K8S_VERSION}-arm64.tar.gz"
-
-          # 使用 containerd 的 ctr 命令逐一拉取镜像
+          # 拉取镜像
           for img in $IMAGES; do
             sudo ctr images pull $img
           done
-
-          # 使用 containerd 保存镜像为 tarball
+          # 保存镜像
           sudo ctr images export $FILE $IMAGES
           echo "ARCHIVE_NAME=$FILE" >> $GITHUB_ENV
 
