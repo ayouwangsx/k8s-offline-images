@@ -1,0 +1,25 @@
+name: Create GitHub Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  schedule:
+    # UTC 时间 4 点 00 分，北京时间 12 点 00 分
+    - cron: "00 16,4 * * *"
+
+jobs:
+  export-images:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # 用于发布 release
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Configure Git user
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"

@@ -1,0 +1,56 @@
+name: Check Tag
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  schedule:
+    # UTC 时间 4 点 00 分，北京时间 12 点 00 分
+    - cron: "00 16,4 * * *"
+
+jobs:
+  export-images:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # 用于发布 release
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Configure Git user
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Check TAG
+        shell: bash
+        run: |
+          if [-f ./VERSION]; then
+              echo "🛑 VERSION file does not exist"
+              exit 1
+          fi
+          if [ -f ./version_list ]; then
+              rm -rf version_list
+          fi
+          cat VERSION | sort -Vu -o version_list
+          echo "Latest versions:"
+          cat version_list | while read version_list; do
+              HAVE_TAG=false
+
+              for tag in $(git tag); do
+                  if [ "${version_list}" == "${tag}" ]; then
+                      HAVE_TAG=true
+                      break
+                  fi
+              done
+
+              if ! ${HAVE_TAG}; then
+                  echo "Creating and pushing tag ${version_list}"
+                  git tag ${version_list}
+                  git push origin ${version_list}
+              else
+                  echo "Tag ${version_list} already exists, skipping"
+              fi
+          done
