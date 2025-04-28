@@ -57,4 +57,15 @@ jobs:
           else
               echo "✨ No new tags to push."
           fi
-          
+      - name: Trigger kubeadm-image-export-amd.yml workflow
+        run: |
+          curl -X POST \
+          -H "Authorization: token ${{ secrets.PERSONAL_TOKEN }}" \
+          -d '{"ref": "refs/heads/main"}' \
+          https://api.github.com/repos/${{ github.repository }}/actions/workflows/kubeadm-image-export-amd.yml/dispatches
+      - name: Trigger kubeadm-image-export-arm.yml workflow
+        run: |
+          curl -X POST \
+          -H "Authorization: token ${{ secrets.PERSONAL_TOKEN }}" \
+          -d '{"ref": "refs/heads/main"}' \
+          https://api.github.com/repos/${{ github.repository }}/actions/workflows/kubeadm-image-export-arm.yml/dispatches

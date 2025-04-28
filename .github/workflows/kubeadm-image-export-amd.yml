@@ -1,6 +1,10 @@
 name: Build and Push K8s Images
 
 on:
+  workflow_run:
+    workflows: ["Check Tag"]
+    types:
+      - completed
   push:
     tags:
       - 'v*'

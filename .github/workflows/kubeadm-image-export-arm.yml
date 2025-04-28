@@ -1,11 +1,13 @@
 name: Build and Push K8s Images
 
 on:
+  workflow_run:
+    workflows: ["Check Tag"]
+    types:
+      - completed
   push:
     tags:
       - 'v*'
-  repository_dispatch:
-    types: [new-tag-pushed]
 
 jobs:
   export-images:
