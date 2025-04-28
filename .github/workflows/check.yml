@@ -27,30 +27,33 @@ jobs:
       - name: Check TAG
         shell: bash
         run: |
-          if [-f ./VERSION]; then
+          if [ ! -f ./VERSION ]; then
               echo "🛑 VERSION file does not exist"
               exit 1
           fi
-          if [ -f ./version_list ]; then
-              rm -rf version_list
-          fi
-          cat VERSION | sort -Vu -o version_list
-          echo "Latest versions:"
-          cat version_list | while read version_list; do
-              HAVE_TAG=false
 
-              for tag in $(git tag); do
-                  if [ "${version_list}" == "${tag}" ]; then
-                      HAVE_TAG=true
-                      break
-                  fi
-              done
+          # 确保版本列表是唯一并排序的
+          sort -Vu VERSION -o version_list
 
-              if ! ${HAVE_TAG}; then
-                  echo "Creating and pushing tag ${version_list}"
-                  git tag ${version_list}
-                  git push origin ${version_list}
+          # 记录要推送的新 tag
+          new_tags=""
+
+          # 检查每个版本是否已有 tag
+          while read -r version; do
+              if git rev-parse "refs/tags/$version" >/dev/null 2>&1; then
+                  echo "✅ Tag $version already exists, skipping"
               else
-                  echo "Tag ${version_list} already exists, skipping"
+                  echo "🏷️ Creating tag $version"
+                  git tag "$version"
+                  new_tags="$new_tags $version"
               fi
-          done
+          done < version_list
+
+          # 如果有新 tag，推送它们
+          if [ -n "$new_tags" ]; then
+              echo "🚀 Pushing new tags: $new_tags"
+              git remote set-url origin https://x-access-token:${{ secrets.PERSONAL_TOKEN }}@github.com/${{ github.repository }}
+              git push origin $new_tags
+          else
+              echo "✨ No new tags to push."
+          fi
