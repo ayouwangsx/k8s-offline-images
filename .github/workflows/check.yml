@@ -57,3 +57,4 @@ jobs:
           else
               echo "✨ No new tags to push."
           fi
+          
