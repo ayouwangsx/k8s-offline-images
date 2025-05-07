@@ -5,9 +5,9 @@ on:
   push:
     branches:
       - main
-  schedule:
-    # UTC 时间 4 点 00 分，北京时间 12 点 00 分
-    - cron: "00 16,4 * * *"
+  # schedule:
+  #   # UTC 时间 4 点 00 分，北京时间 12 点 00 分
+  #   - cron: "00 16,4 * * *"
 
 jobs:
   export-images:
